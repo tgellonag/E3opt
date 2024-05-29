@@ -111,8 +111,8 @@ for c in C:
     for t in T:
         modelo.addConstr((\
             quicksum(quicksum((1-z[i,y])*p[i,c,t] for y in Y) for i in I) +\
-            quicksum(quicksum(quicksum(z[i,y]*u[i,c,u] for y in Y) for i in I) for u in range(1, t + 1)) ==\
-            quicksum(quicksum(o[i,c]*u[i,c,u] for i in I) for u in range(1, t + 1))\
+            quicksum(quicksum(quicksum(z[i,y]*u[i,c,theta] for y in Y) for i in I) for theta in range(1, t + 1)) ==\
+            quicksum(quicksum(o[i,c]*u[i,c,theta] for i in I) for theta in range(1, t + 1))\
             ), name = "R8")
 
 
@@ -148,7 +148,7 @@ for i in I:
 # 14. sc corresponde al tiempo que el curso c espera en su sala antes de comenzar a 
 # recorrer su pasillo de origen.
 for c in C:
-    modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,tp] for i in I for tp in range(1, t)) for t in T) == s[c], name = "R14")
+    modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,theta] for i in I for theta in range(1, t)) for t in T) == s[c], name = "R14")
 
 # 15. Los cursos no pueden empezar ocupando un pasillo.
 for i in I:

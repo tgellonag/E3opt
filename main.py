@@ -36,7 +36,11 @@ r = pd.read_csv(f'{carpeta_parametros}/responsable_zona_curso.csv', header=None)
 C = range(len(n)) # numero de cursos
 I = range(len(k))  # numero de pasillos
 Y = range(len(q)) # numero de zonas de seguridad 
-T = range(int(1 + quicksum(d[i]/v.iloc[c, i] for c in C for i in I))) # tiempo en segundos
+tiempo_max = 1
+for c in C:
+    for i in I:
+        tiempo_max += d[i]/v.iloc[c, i]
+T = range(int(tiempo_max)) # tiempo en segundos
 
 # MODELO
 

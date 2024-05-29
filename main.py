@@ -97,7 +97,7 @@ for c in C:
 # 6. Todos los cursos pasan por su pasillo de origen.
 for c in C:
     for i in I:
-        modelo.addConstr(o[c,i] <= quicksum(u[i,c,t] for t in T), name = "R6")
+        modelo.addConstr((o[i,c] - quicksum(u[i,c,t] for t in T) <= 0), name = "R6")
 
 
 # 7. Las zonas de seguridad no rebalsan.

@@ -16,21 +16,21 @@ z = pd.read_csv('Parametros/pasillo_llega_zona_segura.csv', header=None)
 # c_ij: connexiones de pasillos (1 = los pasillos i y j estan conectados | 0 = e.o.c.)
 c = pd.read_csv('Parametros/conexion_pasillos.csv', header=None)
 # d_i: distancia del pasillo i
-d = pd.read_csv('Parametros/distancia_pasillos.csv', header=None)
+d = pd.read_csv('Parametros/distancia_pasillos.csv', header=None).iloc[:,0]
 # v_ci: velocidad máxima del curso c por el pasillo i
 v = pd.read_csv('Parametros/velocidad_cursos.csv', header=None)
 # o_ic: pasillo de origen de los cursos (1 = el pasillo i es el pasillo de origen del curso c | 0 = e.o.c.)
 o = pd.read_csv('Parametros/pasillo_origen.csv', header=None)
 # k_i: capacidad máxima del pasillo i
-k = pd.read_csv("Parametros/capacidad_pasillos.csv", header=None)
+k = pd.read_csv("Parametros/capacidad_pasillos.csv", header=None).iloc[:,0]
 # n_c: cantidad de personas en el curso c
-n = pd.read_csv("Parametros/cantidad_curso.csv", header=None)
+n = pd.read_csv("Parametros/cantidad_curso.csv", header=None).iloc[:,0]
 # q_y: capacidad máxima de la zona segura y
-q = pd.read_csv('Parametros/capacidad_zona.csv', header=None)
+q = pd.read_csv('Parametros/capacidad_zona.csv', header=None).iloc[:,0]
 # m_c: discapacitados del curso (1 = el curso c tiene algún discapacitado | 0 = e.o.c.)
-m = pd.read_csv('Parametros/discapacitado_curso.csv', header=None)
+m = pd.read_csv('Parametros/discapacitado_curso.csv', header=None).iloc[:,0]
 # a_i: pasillo apto para discapacitados (1 = el pasillo i es apto para discapacitados | 0 = e.o.c.)
-a = pd.read_csv("Parametros/discapacitado_pasillo.csv", header=None)
+a = pd.read_csv("Parametros/discapacitado_pasillo.csv", header=None).iloc[:,0]
 # r_cy: responsables zonas, (1 = dentro del curso c se encuantra un responzable de la zona y | 0 = e.o.c)
 r = pd.read_csv('Parametros/responsable_zona_curso.csv', header=None)
 
@@ -63,7 +63,7 @@ modelo.addConstrs((landa >= S[c] + quicksum(quicksum(p[i,c,t] for i in I) for t 
                    for c in C),name = "R1")
 
 # 2. Las personas en un pasillo no exceden el máximo.
-modelo.addConstrs((quicksum(p[i,c,t] for c in C) * n[i] <= k[i] for i in I for t in T),
+modelo.addConstrs((quicksum(p[i,c,t] * n[c] for c in C) <= k[i] for i in I for t in T),
                   name = "R2")
 
 # 3. El tiempo en un pasillo es mayor o igual a la distancia del pasillo entre la 

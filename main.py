@@ -9,15 +9,15 @@ if input("Ingrese '1' para el modelo grande, '2' para el modelo chico: ") == 1:
 else:
     carpeta_parametros = carpetas_parametros[1]
 # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
-z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None)
+z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
 # c_ij: connexiones de pasillos (1 = los pasillos i y j estan conectados | 0 = e.o.c.)
-x = pd.read_csv(f'{carpeta_parametros}/conexion_pasillos.csv', header=None)
+x = pd.read_csv(f'{carpeta_parametros}/conexion_pasillos.csv', header=None).to_numpy()
 # d_i: distancia del pasillo i
 d = pd.read_csv(f'{carpeta_parametros}/distancia_pasillos.csv', header=None).iloc[:,0]
 # v_ci: velocidad máxima del curso c por el pasillo i
-v = pd.read_csv(f'{carpeta_parametros}/velocidad_cursos.csv', header=None)
+v = pd.read_csv(f'{carpeta_parametros}/velocidad_cursos.csv', header=None).to_numpy()
 # o_ic: pasillo de origen de los cursos (1 = el pasillo i es el pasillo de origen del curso c | 0 = e.o.c.)
-o = pd.read_csv(f'{carpeta_parametros}/pasillo_origen.csv', header=None)
+o = pd.read_csv(f'{carpeta_parametros}/pasillo_origen.csv', header=None).to_numpy()
 # k_i: capacidad máxima del pasillo i
 k = pd.read_csv(f"{carpeta_parametros}/capacidad_pasillos.csv", header=None).iloc[:,0]
 # n_c: cantidad de personas en el curso c
@@ -29,7 +29,7 @@ m = pd.read_csv(f'{carpeta_parametros}/discapacitado_curso.csv', header=None).il
 # a_i: pasillo apto para discapacitados (1 = el pasillo i es apto para discapacitados | 0 = e.o.c.)
 a = pd.read_csv(f"{carpeta_parametros}/discapacitado_pasillo.csv", header=None).iloc[:,0]
 # r_cy: responsables zonas, (1 = dentro del curso c se encuantra un responzable de la zona y | 0 = e.o.c)
-r = pd.read_csv(f'{carpeta_parametros}/responsable_zona_curso.csv', header=None)
+r = pd.read_csv(f'{carpeta_parametros}/responsable_zona_curso.csv', header=None).to_numpy()
 
 # CONJUNTOS
 
@@ -39,7 +39,7 @@ Y = range(len(q)) # numero de zonas de seguridad
 tiempo_max = 1
 for c in C:
     for i in I:
-        tiempo_max += d[i]/v.iloc[c, i]
+        tiempo_max += d[i]/v[c, i]
 T = range(int(tiempo_max)) # tiempo en segundos
 
 # MODELO
@@ -80,29 +80,29 @@ for i in I:
 for c in C:
     for i in I:
         for t in T:
-            modelo.addConstr((quicksum(p[i,c, sigma] for sigma in range(t, min(1 + t + int(d[i]/v.iloc[c,i]), len(T)))\
-                )>= (d[i]/v.iloc[c,i]) * u[i,c,t]),name = "R3")
+            modelo.addConstr((quicksum(p[i,c, sigma] for sigma in range(t, min(1 + t + int(d[i]/v[c,i]), len(T)))\
+                )>= (d[i]/v[c,i]) * u[i,c,t]),name = "R3")
 
 # 4. Un curso que pasa por un pasillo debe tener uno de origen. A menos que este sea 
 #el primero.
 for c in C:
     for i in I:
         for t in range(1, len(T)):
-            modelo.addConstr(( u[i,c,t] <= o.iloc[i,c] + quicksum(x.iloc[i,j]*p[j,c,t-1] for j in I if j != i) ), name = "R4")
+            modelo.addConstr(( u[i,c,t] <= o[i,c] + quicksum(x[i,j]*p[j,c,t-1] for j in I if j != i) ), name = "R4")
 
 # 5. Todos los cursos llegan a una zona de seguridad.
 for c in C:
-    modelo.addConstr((1 == quicksum(quicksum(quicksum((u[i,c,t]*z.iloc[i,y]) for y in Y) for i in I) for t in T)), name = "R5")
+    modelo.addConstr((1 == quicksum(quicksum(quicksum((u[i,c,t]*z[i,y]) for y in Y) for i in I) for t in T)), name = "R5")
 
 # 6. Todos los cursos pasan por su pasillo de origen.
 for c in C:
     for i in I:
-        modelo.addConstr(o.iloc[c,i] <= quicksum(u[i,c,t] for t in T), name = "R6")
+        modelo.addConstr(o[c,i] <= quicksum(u[i,c,t] for t in T), name = "R6")
 
 
 # 7. Las zonas de seguridad no rebalsan.
 for y in Y:
-    modelo.addConstr((quicksum(quicksum(quicksum(u[i,c,t]*z.iloc[i,y]*n[c] for i in I) for c in C)for t in T)<=q[y]), name = "R7")
+    modelo.addConstr((quicksum(quicksum(quicksum(u[i,c,t]*z[i,y]*n[c] for i in I) for c in C)for t in T)<=q[y]), name = "R7")
 
 
 # 8. Si un curso ya salió de su sala, debe estar en algún pasillo o en una zona segura,
@@ -110,9 +110,9 @@ for y in Y:
 for c in C:
     for t in T:
         modelo.addConstr((\
-            quicksum(quicksum((1-z.iloc[i,y])*p[i,c,t] for y in Y) for i in I) +\
-            quicksum(quicksum(quicksum(z.iloc[i,y]*u[i,c,u] for y in Y) for i in I) for u in range(1, t + 1)) ==\
-            quicksum(quicksum(o.iloc[i,c]*u[i,c,u] for i in I) for u in range(1, t + 1))\
+            quicksum(quicksum((1-z[i,y])*p[i,c,t] for y in Y) for i in I) +\
+            quicksum(quicksum(quicksum(z[i,y]*u[i,c,u] for y in Y) for i in I) for u in range(1, t + 1)) ==\
+            quicksum(quicksum(o[i,c]*u[i,c,u] for i in I) for u in range(1, t + 1))\
             ), name = "R8")
 
 
@@ -129,7 +129,7 @@ for c in C:
 
 # 11. Los responsables de zona van sí o sí a su zona.
 for y in Y:
-    modelo.addConstr(quicksum(r.iloc[c, y] * u[i,c,t] * z.iloc[i,y] for c in C for i in I for t in T) >= quicksum(r.iloc[c, y]))
+    modelo.addConstr(quicksum(r[c, y] * u[i,c,t] * z[i,y] for c in C for i in I for t in T) >= quicksum(r[c, y]))
 
 # 12. Un curso pasa por un pasillo máximo una vez.
 for c in C:
@@ -148,7 +148,7 @@ for i in I:
 # 14. sc corresponde al tiempo que el curso c espera en su sala antes de comenzar a 
 # recorrer su pasillo de origen.
 for c in C:
-    modelo.addConstr(quicksum(1 - quicksum(o.iloc[i, c]* u[i,c,tp] for i in I for tp in range(1, t)) for t in T) == s[c], name = "R14")
+    modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,tp] for i in I for tp in range(1, t)) for t in T) == s[c], name = "R14")
 
 # 15. Los cursos no pueden empezar ocupando un pasillo.
 for i in I:
@@ -157,7 +157,7 @@ for i in I:
         modelo.addConstr(u[i, c, 0] == 0, name = "R15b")
 
 # 16. λ se encuentra dentro de T.
-modelo.AddConstr(landa <= quicksum(d[i]/v.iloc[c, i] for c in C for i in I)) 
+modelo.AddConstr(landa <= quicksum(d[i]/v[c, i] for c in C for i in I)) 
 modelo.update()
 # FUNCION OBJETIVO
 modelo.setObjective(landa, GRB.MINIMIZE)

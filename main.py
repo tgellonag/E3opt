@@ -218,13 +218,18 @@ if modelo.status == GRB.OPTIMAL:
     print(f"Tiempo mínimo de evacuación: {landa.X}")
     for c in C:
         print(f"Tiempo de salida del curso {c}: {s[c].X}")
-    for i in I:
-        for c in C:
-            for t in T:
+    df_resultados = pd.DataFrame(columns=[f"Pasillo {i}" for i in I])
+    for t in T:
+        for i in I:
+            for c in C:
                 if p[i,c,t].X > 0.5:
-                    print(f"Pasillo {i} es usado por el curso {c} en el tiempo {t}")
-                if u[i,c,t].X > 0.5:
-                    print(f"Pasillo {i} es transitado por el curso {c} en el tiempo {t}")
+                    df_resultados.loc[t, f"Pasillo {i}"] = c
+                # if p[i,c,t].X > 0.5:
+                #     print(f"Pasillo {i} es usado por el curso {c} en el tiempo {t}")
+                # if u[i,c,t].X > 0.5:
+                #     print(f"Pasillo {i} es transitado por el curso {c} en el tiempo {t}")
+    df_resultados = df_resultados.fillna(' ')
+    print(df_resultados)
 else:
     print("No se encontró una solución óptima.")
 

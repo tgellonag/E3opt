@@ -2,6 +2,8 @@ from gurobipy import Model, GRB, quicksum
 import pandas as pd
 import numpy as np
 import time
+import tkinter as tk
+from tkinter import scrolledtext
 
 
 # PARAMETROS
@@ -241,7 +243,38 @@ if modelo.status == GRB.OPTIMAL:
                         df_resultados.loc[t, f"Pasillo {i}"] = f"Cursos: {c}"
 
     df_resultados = df_resultados.fillna(' ')
+    #df_resultados.insert(0, 'Tiempo', [t for T in range(0 , df_resultados.shape[0])])
     print(df_resultados)
+
+    # Creamos una ventana que muestre la tabla
+    def mostrar_tabla(df):
+        ventana = tk.Tk()
+        ventana.title("Tabla Decision")
+        tabla_texto = df.to_string(index=False)
+
+        # Crear un widget Text para mostrar la tabla
+        texto_tabla = scrolledtext.ScrolledText(ventana, wrap=tk.NONE)
+        texto_tabla.insert(tk.END, tabla_texto)
+        texto_tabla.grid(row=0, column=0, sticky='nsew')
+
+        # Configurar la ventana para que el texto se ajuste al tamaño de la ventana
+        ventana.grid_rowconfigure(0, weight=1)
+        ventana.grid_columnconfigure(0, weight=1)
+
+        # Configurar las barras de desplazamiento horizontal y vertical
+        scroll_x = tk.Scrollbar(ventana, orient=tk.HORIZONTAL, command=texto_tabla.xview)
+        scroll_x.grid(row=1, column=0, sticky='ew')
+        texto_tabla['xscrollcommand'] = scroll_x.set
+
+        scroll_y = tk.Scrollbar(ventana, orient=tk.VERTICAL, command=texto_tabla.yview)
+        scroll_y.grid(row=0, column=1, sticky='ns')
+        texto_tabla['yscrollcommand'] = scroll_y.set
+
+        # Ejecutar el bucle de eventos de Tkinter
+        ventana.mainloop()
+
+    # Llamar a la función para mostrar la tabla
+    mostrar_tabla(df_resultados)
 else:
     print("No se encontró una solución óptima.")
 

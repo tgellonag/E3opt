@@ -1,10 +1,12 @@
 from gurobipy import Model, GRB, quicksum
 import pandas as pd
 import numpy as np
+import time
+
 
 # PARAMETROS
 carpetas_parametros = ["parametros_grande", "parametros_chico"]
-if input("Ingrese '1' para el modelo grande, '2' para el modelo chico: ") == 1:
+if input("Ingrese '1' para el modelo grande, '2' para el modelo chico: ") == '1':
     carpeta_parametros = carpetas_parametros[0]
 else:
     carpeta_parametros = carpetas_parametros[1]
@@ -30,6 +32,10 @@ m = pd.read_csv(f'{carpeta_parametros}/discapacitado_curso.csv', header=None).il
 a = pd.read_csv(f"{carpeta_parametros}/discapacitado_pasillo.csv", header=None).iloc[:,0]
 # r_cy: responsables zonas, (1 = dentro del curso c se encuantra un responzable de la zona y | 0 = e.o.c)
 r = pd.read_csv(f'{carpeta_parametros}/responsable_zona_curso.csv', header=None).to_numpy()
+
+for i in range(len(d)):
+
+    d[i] = d[i] * 5
 
 # CONJUNTOS
 
@@ -71,10 +77,14 @@ modelo.update()
 for c in C:
     modelo.addConstr((landa >= s[c] + quicksum(quicksum(p[i,c,t] for i in I) for t in T) ),name = "R1")
 
+print("Restricción 1 lista")
+
 # 2. Las personas en un pasillo no exceden el máximo.
 for i in I:
     for t in T:
         modelo.addConstr((quicksum(p[i,c,t]* n[c] for c in C)  <= k[i]), name = "R2")
+
+print("Restricción 2 lista")
 
 # 3. El tiempo en un pasillo es mayor o igual a la distancia del pasillo entre la 
 # velocidad máxima del curso.
@@ -84,34 +94,64 @@ for c in C:
             modelo.addConstr((quicksum(p[i,c, sigma] for sigma in range(t, min(1 + t + int(d[i]/v[c,i]), len(T)))\
                 )>= (d[i]/v[c,i]) * u[i,c,t]),name = "R3")
 
+print("Restricción 3 lista")
+
 # 4. Un curso que pasa por un pasillo debe tener uno de origen. A menos que este sea el primero.
 for c in C:
     for i in I:
         for t in range(1, len(T)):
             modelo.addConstr(( u[i,c,t] <= o[i,c] + quicksum(x[i,j]*p[j,c,t-1] for j in I if j != i) ), name = "R4")
 
+print("Restricción 4 lista")
+
 # 5. Todos los cursos llegan a una zona de seguridad.
 for c in C:
     modelo.addConstr((1 == quicksum(quicksum(quicksum((u[i,c,t]*z[i,y]) for y in Y) for i in I) for t in T)), name = "R5")
+
+print("Restricción 5 lista")
 
 # 6. Todos los cursos pasan por su pasillo de origen.
 for c in C:
     for i in I:
         modelo.addConstr((o[i,c] - quicksum(u[i,c,t] for t in T) <= 0), name = "R6")
 
+print("Restricción 6 lista")
 
 # 7. Las zonas de seguridad no rebalsan.
 for y in Y:
     modelo.addConstr((quicksum(quicksum(quicksum(u[i,c,t]*z[i,y]*n[c] for i in I) for c in C)for t in T)<=q[y]), name = "R7")
 
 print("Restricciones 1-7 listas")
+
+start_time = time.time()
+
 # 8. Si un curso ya salió de su sala, debe estar en algún pasillo o en una zona segura, y el pasillo de origen es el primero que se recorre.
+suma1 = 0
+suma2 = 0
+
+# for c in C:
+#     for t in T:
+#         print(f"Restriccion 8: {c} {t}")
+#         modelo.addConstr((quicksum(quicksum((1-z[i,y])*p[i,c,t] for y in Y) for i in I) + quicksum(quicksum(quicksum(z[i,y]*u[i,c,theta] for y in Y) for i in I) for theta in range(1, t + 1)) == quicksum(quicksum(o[i,c]*u[i,c,theta] for i in I) for theta in range(1, t + 1))), name = "R8")
+
 for c in C:
     for t in T:
         print(f"Restriccion 8: {c} {t}")
-        modelo.addConstr((quicksum(quicksum((1-z[i,y])*p[i,c,t] for y in Y) for i in I) + quicksum(quicksum(quicksum(z[i,y]*u[i,c,theta] for y in Y) for i in I) for theta in range(1, t + 1)) == quicksum(quicksum(o[i,c]*u[i,c,theta] for i in I) for theta in range(1, t + 1))), name = "R8")
+
+        suma1 += quicksum(z[i, y] * u[i, c, t] for y in Y for i in I)
+        suma2 += quicksum(o[i, c] * u[i, c, t] for i in I)
+        
+        modelo.addConstr(
+            quicksum((1 - z[i, y]) * p[i, c, t] for y in Y for i in I) + suma1 == suma2,
+            name=f"R8_{c}_{t}"
+        )
 
 print("Restricciones 8 listas")
+
+end_time = time.time()
+run_time = end_time - start_time
+print(f"Run time: {run_time} seconds")
+
 # 9. Cada curso está en máximo un pasillo a la vez.
 for c in C:
     for t in T:

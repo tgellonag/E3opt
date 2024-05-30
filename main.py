@@ -223,7 +223,11 @@ if modelo.status == GRB.OPTIMAL:
         for i in I:
             for c in C:
                 if p[i,c,t].X > 0.5:
-                    df_resultados.loc[t, f"Pasillo {i}"] = c
+                    try:
+                        df_resultados.loc[t, f"Pasillo {i}"] += f", {c}"
+                    except:
+                        df_resultados.loc[t, f"Pasillo {i}"] = f"Cursos: {c}"
+                        
                 # if p[i,c,t].X > 0.5:
                 #     print(f"Pasillo {i} es usado por el curso {c} en el tiempo {t}")
                 # if u[i,c,t].X > 0.5:

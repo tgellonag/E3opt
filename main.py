@@ -5,11 +5,16 @@ import time
 
 
 # PARAMETROS
-carpetas_parametros = ["parametros_grande", "parametros_chico"]
-if input("Ingrese '1' para el modelo grande, '2' para el modelo chico: ") == '1':
+carpetas_parametros = ["parametros_grande", "parametros_chico", "parametros_enano"]
+for i in range(len(carpetas_parametros)):
+    print(f"{i+1}. {carpetas_parametros[i]}")
+opcion = input("Ingrese el número de la carpeta de parámetros que desea utilizar: ")
+if opcion == '1':
     carpeta_parametros = carpetas_parametros[0]
-else:
+elif opcion == '2':
     carpeta_parametros = carpetas_parametros[1]
+else:
+    carpeta_parametros = carpetas_parametros[2]
 # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
 z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
 # c_ij: connexiones de pasillos (1 = los pasillos i y j estan conectados | 0 = e.o.c.)
@@ -33,10 +38,6 @@ a = pd.read_csv(f"{carpeta_parametros}/discapacitado_pasillo.csv", header=None).
 # r_cy: responsables zonas, (1 = dentro del curso c se encuantra un responzable de la zona y | 0 = e.o.c)
 r = pd.read_csv(f'{carpeta_parametros}/responsable_zona_curso.csv', header=None).to_numpy()
 
-for i in range(len(d)):
-
-    d[i] = d[i] * 5
-
 # CONJUNTOS
 
 C = range(len(n)) # numero de cursos
@@ -52,7 +53,7 @@ T = range(int(tiempo_max)) # tiempo en segundos
 # MODELO
 
 modelo = Model("Operación Deyse")
-modelo.setParam("TimeLimit", 20) 
+modelo.setParam("TimeLimit", 60) 
 
 # VARIABLES
 
@@ -123,34 +124,36 @@ for y in Y:
 
 print("Restricciones 1-7 listas")
 
-start_time = time.time()
-
 # 8. Si un curso ya salió de su sala, debe estar en algún pasillo o en una zona segura, y el pasillo de origen es el primero que se recorre.
-suma1 = 0
-suma2 = 0
+
 
 # for c in C:
 #     for t in T:
 #         print(f"Restriccion 8: {c} {t}")
-#         modelo.addConstr((quicksum(quicksum((1-z[i,y])*p[i,c,t] for y in Y) for i in I) + quicksum(quicksum(quicksum(z[i,y]*u[i,c,theta] for y in Y) for i in I) for theta in range(1, t + 1)) == quicksum(quicksum(o[i,c]*u[i,c,theta] for i in I) for theta in range(1, t + 1))), name = "R8")
+#         modelo.addConstr((quicksum(quicksum((1-z[i,y])*p[i,c,t] for y in Y) for i in I) + \
+#         quicksum(quicksum(quicksum(z[i,y]*u[i,c,theta] for y in Y) for i in I) for theta in range(1, t + 1)) == quicksum(quicksum(o[i,c]*u[i,c,theta] for i in I) for theta in range(1, t + 1))), name = "R8")
 
 for c in C:
+    suma1 = 0
+    suma2 = 0
     for t in T:
         print(f"Restriccion 8: {c} {t}")
 
         suma1 += quicksum(z[i, y] * u[i, c, t] for y in Y for i in I)
-        suma2 += quicksum(o[i, c] * u[i, c, t] for i in I)
+        suma2 += quicksum(o[j, c] * u[j, c, t] for j in I)
         
         modelo.addConstr(
-            quicksum((1 - z[i, y]) * p[i, c, t] for y in Y for i in I) + suma1 == suma2,
-            name=f"R8_{c}_{t}"
+            suma2 <= quicksum((1 - z[i, y]) * p[i, c, t] for y in Y for i in I) + suma1,
+            name=f"R8_{c}_{t}.a"
         )
+        for i in I:
+            modelo.addConstr(
+                quicksum(u[i,c,sigma] for sigma in range(1,t+1)) <= suma2,
+                name=f"R8_{c}_{t}.b"
+            )
 
 print("Restricciones 8 listas")
 
-end_time = time.time()
-run_time = end_time - start_time
-print(f"Run time: {run_time} seconds")
 
 # 9. Cada curso está en máximo un pasillo a la vez.
 for c in C:
@@ -160,12 +163,12 @@ print("Restricciones 9 listas")
 # 10. Cursos con discapacitados solo pueden pasar por pasillos aptos
 for c in C:
     for i in I:
-        modelo.addConstr(quicksum(u[i,c,t] for t in T) <= a[i], name = "R10")
+        modelo.addConstr(quicksum(u[i,c,t] * m[c] for t in T) <= a[i], name = "R10")
 print("Restricciones 10 listas")
 
 # 11. Los responsables de zona van sí o sí a su zona.
 for y in Y:
-    modelo.addConstr(quicksum(r[c, y] * u[i,c,t] * z[i,y] for c in C for i in I for t in T) >= quicksum(r[c, y] for c in C), name = "R11")
+    modelo.addConstr(quicksum(quicksum(quicksum(r[c, y] * u[i,c,t] * z[i,y] for c in C) for i in I) for t in T) >= quicksum(r[c, y] for c in C), name = "R11")
 print("Restricciones 11 listas")
 # 12. Un curso pasa por un pasillo máximo una vez.
 for c in C:
@@ -183,7 +186,7 @@ print("Restricciones 13 listas")
 # 14. sc corresponde al tiempo que el curso c espera en su sala antes de comenzar a 
 # recorrer su pasillo de origen.
 for c in C:
-    modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,theta] for i in I for theta in range(1, t)) for t in T) == s[c], name = "R14")
+    modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,theta] for i in I for theta in range(t + 1)) for t in T) == s[c], name = "R14")
 print("Restricciones 14 listas")
 # 15. Los cursos no pueden empezar ocupando un pasillo.
 for i in I:
@@ -192,7 +195,7 @@ for i in I:
         modelo.addConstr(u[i, c, 0] == 0, name = "R15b")
 print("Restricciones 15 listas")
 # 16. λ se encuentra dentro de T.
-modelo.addConstr(landa <= quicksum(d[i]/v[c, i] for c in C for i in I)) 
+modelo.addConstr(landa <= quicksum(d[i]/v[c, i] for c in C for i in I) + 1, name = "R16") 
 print("Restricciones 16 listas")
 modelo.update()
 print("Restricciones listas")

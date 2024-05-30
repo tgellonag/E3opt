@@ -5,7 +5,7 @@ import time
 
 
 # PARAMETROS
-carpetas_parametros = ["parametros_grande", "parametros_chico", "parametros_enano"]
+carpetas_parametros = ["parametros_grande","parametros_mediano", "parametros_chico", "parametros_enano"]
 for i in range(len(carpetas_parametros)):
     print(f"{i+1}. {carpetas_parametros[i]}")
 opcion = input("Ingrese el número de la carpeta de parámetros que desea utilizar: ")
@@ -13,8 +13,10 @@ if opcion == '1':
     carpeta_parametros = carpetas_parametros[0]
 elif opcion == '2':
     carpeta_parametros = carpetas_parametros[1]
-else:
+elif opcion == '3':
     carpeta_parametros = carpetas_parametros[2]
+else:
+    carpeta_parametros = carpetas_parametros[3]
 # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
 z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
 # c_ij: connexiones de pasillos (1 = los pasillos i y j estan conectados | 0 = e.o.c.)
@@ -53,7 +55,14 @@ T = range(int(tiempo_max)) # tiempo en segundos
 # MODELO
 
 modelo = Model("Operación Deyse")
-modelo.setParam("TimeLimit", 60) 
+if opcion == '1':
+    modelo.setParam("TimeLimit", 3600)
+elif opcion == '2':
+    modelo.setParam("TimeLimit", 1800)
+elif opcion == '3':
+    modelo.setParam("TimeLimit", 30)
+else:
+    modelo.setParam("TimeLimit", 30)
 
 # VARIABLES
 

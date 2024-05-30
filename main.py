@@ -60,9 +60,9 @@ if opcion == '1':
 elif opcion == '2':
     modelo.setParam("TimeLimit", 1800)
 elif opcion == '3':
-    modelo.setParam("TimeLimit", 30)
+    modelo.setParam("TimeLimit", 60)
 else:
-    modelo.setParam("TimeLimit", 30)
+    modelo.setParam("TimeLimit", 60)
 
 # VARIABLES
 
@@ -195,10 +195,10 @@ print("Restricciones 13 listas")
 # 14. sc corresponde al tiempo que el curso c espera en su sala antes de comenzar a 
 # recorrer su pasillo de origen.
 for c in C:
-    # modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,theta] for i in I for theta in range(t + 1)) for t in T) == s[c], name = "R14")
-    salio_i = [[o[i, c] * u[i,c,t] for t in T] for i in I]
-    salio = [(not quicksum(1 for i in I if salio_i[i][t]) == 0) for t in T]
-    modelo.addConstr(quicksum(1 for t in T if not salio[t]) == s[c], name = "R14")
+    modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,theta] for i in I for theta in range(t + 1)) for t in T) == s[c], name = "R14")
+    # salio_i = [[o[i, c] * u[i,c,t] for t in T] for i in I]
+    # salio = [(not sum(1 for i in I if salio_i[i][t]) == 0) for t in T]
+    # modelo.addConstr(sum(1 for t in T if not salio[t]) == s[c], name = "R14")
 print("Restricciones 14 listas")
 # 15. Los cursos no pueden empezar ocupando un pasillo.
 for i in I:

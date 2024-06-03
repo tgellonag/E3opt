@@ -7,7 +7,7 @@ from tkinter import scrolledtext
 
 
 # PARAMETROS
-def funcion(carpeta_parametro, opcion, multiplicador):
+def funcion(carpeta_parametros, multiplicador):
     print(f"Modelo con velocidad x{multiplicador} para encontrar cota de tiempo")
     # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
     z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
@@ -49,14 +49,8 @@ def funcion(carpeta_parametro, opcion, multiplicador):
     # MODELO
     
     modelo = Model("Operación Deyse")
-    if opcion == '1':
-        modelo.setParam("TimeLimit", 3600)
-    elif opcion == '2':
-        modelo.setParam("TimeLimit", 1800)
-    elif opcion == '3':
-        modelo.setParam("TimeLimit", 60)
-    else:
-        modelo.setParam("TimeLimit", 60)
+    modelo.setParam("TimeLimit", 900)
+    
     
     # VARIABLES
     
@@ -243,4 +237,4 @@ def funcion(carpeta_parametro, opcion, multiplicador):
         return("infeasible")
     # RESULTADOS (revisenlo ns si esta bien)
     if modelo.status == GRB.OPTIMAL:
-        return landa.X
+        return int(landa.X) * multiplicador

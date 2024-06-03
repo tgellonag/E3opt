@@ -5,6 +5,7 @@ import numpy as np
 import time
 import tkinter as tk
 from tkinter import scrolledtext
+import cota_superior as cs
 
 
 # PARAMETROS
@@ -50,7 +51,7 @@ C = range(len(n)) # numero de cursos
 I = range(len(k))  # numero de pasillos
 Y = range(len(q)) # numero de zonas de seguridad 
 
-periodos_max = cs.funcion(carpeta_parametros, opcion, 5)
+periodos_max = cs.funcion(carpeta_parametros, 10)
 print(f"Tiempo máximo: {periodos_max}")
 T = range(int(periodos_max)) # tiempo en segundos
 

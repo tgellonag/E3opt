@@ -4,9 +4,8 @@ import time
 import tkinter as tk
 from tkinter import scrolledtext
 
-
-# PARAMETROS
 def funcion(carpeta_parametros, multiplicador, tiempo_max = None, final = False):
+    # PARAMETROS
     print(f"Modelo con velocidad x{multiplicador} para encontrar cota de tiempo")
     # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
     z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
@@ -136,14 +135,6 @@ def funcion(carpeta_parametros, multiplicador, tiempo_max = None, final = False)
     print("Restricciones 1-7 listas")
     
     # 8. Si un curso ya salió de su sala, debe estar en algún pasillo o en una zona segura, y el pasillo de origen es el primero que se recorre.
-    
-    
-    # for c in C:
-    #     for t in T:
-    #         print(f"Restriccion 8: {c} {t}")
-    #         modelo.addConstr((quicksum(quicksum((1-z[i,y])*p[i,c,t] for y in Y) for i in I) + \
-    #         quicksum(quicksum(quicksum(z[i,y]*u[i,c,theta] for y in Y) for i in I) for theta in range(1, t + 1)) == quicksum(quicksum(o[i,c]*u[i,c,theta] for i in I) for theta in range(1, t + 1))), name = "R8")
-    
     for c in C:
     
         print(f"Restriccion 8: {c}")
@@ -199,19 +190,10 @@ def funcion(carpeta_parametros, multiplicador, tiempo_max = None, final = False)
     print("Restricciones 13 listas")
     # 14. sc corresponde al tiempo que el curso c espera en su sala antes de comenzar a 
     # recorrer su pasillo de origen.
-    
-    start_time = time.time()
-    
     for c in C:
         modelo.addConstr(quicksum(1 - ou[c, t] for t in T) == s[c], name = "R14")
-        # salio_i = [[o[i, c] * u[i,c,t] for t in T] for i in I]
-        # salio = [(not sum(1 for i in I if salio_i[i][t]) == 0) for t in T]
-        # modelo.addConstr(sum(1 for t in T if not salio[t]) == s[c], name = "R14")
+
     print("Restricciones 14 listas")
-    
-    end_time = time.time()
-    print(f"Tiempo de ejecución: {end_time - start_time}")
-    
     
     # 15. Los cursos no pueden empezar ocupando un pasillo.
     for i in I:
@@ -250,7 +232,6 @@ def funcion(carpeta_parametros, multiplicador, tiempo_max = None, final = False)
                                 df_resultados.loc[t, f"P{i}"] = f"C: {c}"
 
             df_resultados = df_resultados.fillna(' ')
-            #df_resultados.insert(0, 'Tiempo', [t for T in range(0 , df_resultados.shape[0])])
             print(df_resultados)
 
             # Creamos una ventana que muestre la tabla

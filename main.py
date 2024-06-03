@@ -59,14 +59,9 @@ T = range(int(periodos_max)) # tiempo en segundos
 # MODELO
 
 modelo = Model("Operación Deyse")
-if opcion == '1':
-    modelo.setParam("TimeLimit", 3600)
-elif opcion == '2':
-    modelo.setParam("TimeLimit", 1800)
-elif opcion == '3':
-    modelo.setParam("TimeLimit", 60)
-else:
-    modelo.setParam("TimeLimit", 60)
+
+modelo.setParam("TimeLimit", 1800)
+
 
 # VARIABLES
 

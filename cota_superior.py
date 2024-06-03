@@ -1,13 +1,12 @@
 from gurobipy import Model, GRB, quicksum
 import pandas as pd
-import numpy as np
 import time
 import tkinter as tk
 from tkinter import scrolledtext
 
 
 # PARAMETROS
-def funcion(carpeta_parametros, multiplicador):
+def funcion(carpeta_parametros, multiplicador, tiempo_max = None, final = False):
     print(f"Modelo con velocidad x{multiplicador} para encontrar cota de tiempo")
     # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
     z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
@@ -37,11 +36,12 @@ def funcion(carpeta_parametros, multiplicador):
     C = range(len(n)) # numero de cursos
     I = range(len(k))  # numero de pasillos
     Y = range(len(q)) # numero de zonas de seguridad 
-    tiempo_max = 1
-    for c in C:
-        for i in I:
-            tiempo_max += d[i]/(v[c, i] * multiplicador)
-    print(f"Tiempo máximo: {tiempo_max}")
+    if tiempo_max is None:
+        tiempo_max = 1
+        for c in C:
+            for i in I:
+                tiempo_max += d[i]/(v[c, i] * multiplicador)
+    print(f"Tiempo máximo: {tiempo_max}") 
     T = range(int(tiempo_max)) # tiempo en segundos
     tiempo_max = len(T)
     
@@ -233,8 +233,61 @@ def funcion(carpeta_parametros, multiplicador):
     fin_total = time.time()
     print(f"Tiempo total de ejecución cota superior de tiempo: {fin_total - inicio_total}")
     
-    if modelo.status == GRB.INFEASIBLE:
-        return("infeasible")
-    # RESULTADOS (revisenlo ns si esta bien)
-    if modelo.status == GRB.OPTIMAL:
-        return int(landa.X) * multiplicador
+    if final:
+        if modelo.status == GRB.OPTIMAL:
+            print(f"Tiempo mínimo de evacuación: {landa.X}")
+            for c in C:
+                print(f"Tiempo de salida del curso {c}: {s[c].X}")
+            df_resultados = pd.DataFrame(columns=[f"P{i}" for i in I])
+            df_resultados.to_excel("resultados.xlsx", index=False)
+            for t in T:
+                for i in I:
+                    for c in C:
+                        if p[i,c,t].X > 0.5:
+                            try:
+                                df_resultados.loc[t, f"P{i}"] += f", {c}"
+                            except:
+                                df_resultados.loc[t, f"P{i}"] = f"C: {c}"
+
+            df_resultados = df_resultados.fillna(' ')
+            #df_resultados.insert(0, 'Tiempo', [t for T in range(0 , df_resultados.shape[0])])
+            print(df_resultados)
+
+            # Creamos una ventana que muestre la tabla
+            def mostrar_tabla(df):
+                ventana = tk.Tk()
+                ventana.title("Tabla Decision")
+                tabla_texto = df.to_string(index=False)
+
+                # Crear un widget Text para mostrar la tabla
+                texto_tabla = scrolledtext.ScrolledText(ventana, wrap=tk.NONE)
+                texto_tabla.insert(tk.END, tabla_texto)
+                texto_tabla.grid(row=0, column=0, sticky='nsew')
+
+                # Configurar la ventana para que el texto se ajuste al tamaño de la ventana
+                ventana.grid_rowconfigure(0, weight=1)
+                ventana.grid_columnconfigure(0, weight=1)
+
+                # Configurar las barras de desplazamiento horizontal y vertical
+                scroll_x = tk.Scrollbar(ventana, orient=tk.HORIZONTAL, command=texto_tabla.xview)
+                scroll_x.grid(row=1, column=0, sticky='ew')
+                texto_tabla['xscrollcommand'] = scroll_x.set
+
+                scroll_y = tk.Scrollbar(ventana, orient=tk.VERTICAL, command=texto_tabla.yview)
+                scroll_y.grid(row=0, column=1, sticky='ns')
+                texto_tabla['yscrollcommand'] = scroll_y.set
+
+                # Ejecutar el bucle de eventos de Tkinter
+                ventana.mainloop()
+
+            # Llamar a la función para mostrar la tabla
+            mostrar_tabla(df_resultados)
+        else:
+            print("No se encontró una solución óptima.")
+        print("finish")
+    else:
+        if modelo.status == GRB.INFEASIBLE:
+            return("infeasible")
+        # RESULTADOS (revisenlo ns si esta bien)
+        if modelo.status == GRB.OPTIMAL:
+            return int(landa.X) * multiplicador

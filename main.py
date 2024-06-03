@@ -145,10 +145,12 @@ print("Restricciones 1-7 listas")
 #         quicksum(quicksum(quicksum(z[i,y]*u[i,c,theta] for y in Y) for i in I) for theta in range(1, t + 1)) == quicksum(quicksum(o[i,c]*u[i,c,theta] for i in I) for theta in range(1, t + 1))), name = "R8")
 
 for c in C:
+
+    print(f"Restriccion 8: {c}")
     suma1 = 0
     suma2 = 0
+    
     for t in T:
-        print(f"Restriccion 8: {c} {t}")
 
         suma1 += quicksum(z[i, y] * u[i, c, t] for y in Y for i in I)
         suma2 += quicksum(o[j, c] * u[j, c, t] for j in I)

@@ -51,6 +51,10 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
     modelo = Model("Operación Deyse")
     modelo.setParam("TimeLimit", 900)
 
+
+
+    # Para no tener que esperar tanto tiempo, se puede cambiar el valor de MIPGap a 0.15
+    # Esto solo cuando buscamos una cota superior para el tiempo de evacuación
     if not final:
         modelo.setParam("MIPGap", 0.15)
 
@@ -225,7 +229,6 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
             for c in C:
                 print(f"Tiempo de salida del curso {c}: {s[c].X}")
             df_resultados = pd.DataFrame(columns=[f"P{i}" for i in I])
-            df_resultados.to_excel("resultados.xlsx", index=False)
             for t in T:
                 for i in I:
                     for c in C:
@@ -237,6 +240,7 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
 
             df_resultados = df_resultados.fillna(' ')
             print(df_resultados)
+            df_resultados.to_csv("resultados.csv", index=False)
 
             # Creamos una ventana que muestre la tabla
             def mostrar_tabla(df):
@@ -306,11 +310,12 @@ elif opcion == '4':
 # ya que se espera que un curso no tenga que pasar por todos los pasillos y que los cursos pueden estar recorriendo 
 # pasillos al mismo tiempo.
 tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 10)
-tiempo_max2 = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 5)
+tiempo_max2 = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 5, tiempo_max=tiempo_max)
+tiempo_max3 = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 2, tiempo_max=tiempo_max2)
 
 # Con este resultado, podemos definir una mejor cota superior para el tiempo máximo que los cursos se demorarían en evacuar
 # para así utilizar esta cota para el modelo que se busca optimizar (con periodos de 5s).
-optimizar(carpeta_parametros=carpeta_parametros, multiplicador=1, tiempo_max=tiempo_max2, final=True)
+optimizar(carpeta_parametros=carpeta_parametros, multiplicador=1, tiempo_max=tiempo_max3, final=True)
 
 # Todo este proceso se realiza con el fin de acortar el tiempo de ejecución del programa, para cumplir con el objetivo de
 # resolver el modelo en menos de 30 min desde que se ejecuta main.py y se selecciona la opcion 'parametros_dsla_parvulario'.

@@ -3,6 +3,7 @@ import modelo as m
 carpetas_parametros = ["parametros_mediano", "parametros_chico", "parametros_enano",'parametros_dsla_parvulario']
 for i in range(len(carpetas_parametros)):
     print(f"{i+1}. {carpetas_parametros[i]}")
+print("\n El conjunto de parametros utilizado en el informe es el de la carpeta: 'parametros_dsla_parvulario' \n")
 opcion = input("Ingrese el número de la carpeta de parámetros que desea utilizar: ")
 if opcion == '1':
     carpeta_parametros = carpetas_parametros[0]

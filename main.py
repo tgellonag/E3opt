@@ -1,4 +1,4 @@
-import cota_superior as cs
+import modelo as m
 
 carpetas_parametros = ["parametros_mediano", "parametros_chico", "parametros_enano",'parametros_dsla_parvulario']
 for i in range(len(carpetas_parametros)):
@@ -13,7 +13,6 @@ elif opcion == '3':
 elif opcion == '4':
     carpeta_parametros = carpetas_parametros[3]
 
-multiplicador_velocidad = 5
+tiempo_max = m.funcion( carpeta_parametros=carpeta_parametros, multiplicador= 5 )
 
-cs.funcion(carpeta_parametros=carpeta_parametros, multiplicador=1,\
-            tiempo_max=cs.funcion(carpeta_parametros=carpeta_parametros, multiplicador=multiplicador_velocidad), final=True)
+m.funcion(carpeta_parametros=carpeta_parametros, multiplicador=1, tiempo_max=tiempo_max, final=True)

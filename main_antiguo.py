@@ -1,4 +1,3 @@
-
 from gurobipy import Model, GRB, quicksum
 import pandas as pd
 import numpy as np
@@ -18,10 +17,8 @@ elif opcion == '2':
     carpeta_parametros = carpetas_parametros[1]
 elif opcion == '3':
     carpeta_parametros = carpetas_parametros[2]
-elif opcion == '4':
-    carpeta_parametros = carpetas_parametros[3]
 else:
-    carpeta_parametros = 'parametros_dsla_parvulario'
+    carpeta_parametros = carpetas_parametros[3]
 # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
 z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
 # c_ij: connexiones de pasillos (1 = los pasillos i y j estan conectados | 0 = e.o.c.)
@@ -56,8 +53,6 @@ for c in C:
         tiempo_max += d[i]/v[c, i]
 print(f"Tiempo máximo: {tiempo_max}")
 T = range(int(tiempo_max)) # tiempo en segundos
-tiempo_max = len(T)
-
 
 # MODELO
 
@@ -72,8 +67,6 @@ else:
     modelo.setParam("TimeLimit", 60)
 
 # VARIABLES
-
-inicio_total = time.time()
 
 #Anadiendo variable s
 s = {}
@@ -90,18 +83,6 @@ for i in I:
 #Anadiendo Variable Landa
 landa = modelo.addVar(vtype=GRB.CONTINUOUS, name='landa', lb=0)
 modelo.update()
-
-ou = {}
-for c in C:
-    suma = 0  # Reset suma for each new c
-    for t in T:
-
-        for i in I:
-
-            suma += o[i, c] * u[i, c, t]
-
-        ou[c, t] = suma.copy()
-
 
 # RESTRICCIONES
 # 1. λ corresponde al momento en el que el último curso llega a una zona segura.
@@ -122,7 +103,7 @@ print("Restricción 2 lista")
 for c in C:
     for i in I:
         for t in T:
-            modelo.addConstr((quicksum(p[i,c, sigma] for sigma in range(t, min(1 + t + int(d[i]/v[c,i]), tiempo_max))\
+            modelo.addConstr((quicksum(p[i,c, sigma] for sigma in range(t, min(1 + t + int(d[i]/v[c,i]), len(T)))\
                 )>= (d[i]/v[c,i]) * u[i,c,t]),name = "R3")
 
 print("Restricción 3 lista")
@@ -130,7 +111,7 @@ print("Restricción 3 lista")
 # 4. Un curso que pasa por un pasillo debe tener uno de origen. A menos que este sea el primero.
 for c in C:
     for i in I:
-        for t in range(1, tiempo_max):
+        for t in range(1, len(T)):
             modelo.addConstr(( u[i,c,t] <= o[i,c] + quicksum(x[i,j]*p[j,c,t-1] for j in I if j != i) ), name = "R4")
 
 print("Restricción 4 lista")
@@ -168,13 +149,12 @@ for c in C:
     print(f"Restriccion 8: {c}")
     suma1 = 0
     suma2 = 0
-
+    
     for t in T:
 
         suma1 += quicksum(z[i, y] * u[i, c, t] for y in Y for i in I)
-        suma2 = ou[c, t] 
-
-
+        suma2 += quicksum(o[j, c] * u[j, c, t] for j in I)
+        
         modelo.addConstr(
             suma2 <= quicksum((1 - z[i, y]) * p[i, c, t] for y in Y for i in I) + suma1,
             name=f"R8_{c}_{t}.a"
@@ -213,25 +193,17 @@ print("Restricciones 12 listas")
 # ese pasillo.
 for i in I:
     for c in C:
-        for t in range(1, tiempo_max):
+        for t in range(1, len(T)):
             modelo.addConstr(p[i,c,t] <= u[i, c, t] + p[i,c,t-1],name = "R13")
 print("Restricciones 13 listas")
 # 14. sc corresponde al tiempo que el curso c espera en su sala antes de comenzar a 
 # recorrer su pasillo de origen.
-
-start_time = time.time()
-
 for c in C:
-    modelo.addConstr(quicksum(1 - ou[c, t] for t in T) == s[c], name = "R14")
+    modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,theta] for i in I for theta in range(t + 1)) for t in T) == s[c], name = "R14")
     # salio_i = [[o[i, c] * u[i,c,t] for t in T] for i in I]
     # salio = [(not sum(1 for i in I if salio_i[i][t]) == 0) for t in T]
     # modelo.addConstr(sum(1 for t in T if not salio[t]) == s[c], name = "R14")
 print("Restricciones 14 listas")
-
-end_time = time.time()
-print(f"Tiempo de ejecución: {end_time - start_time}")
-
-
 # 15. Los cursos no pueden empezar ocupando un pasillo.
 for i in I:
     for c in C:
@@ -248,9 +220,6 @@ modelo.setObjective(landa, GRB.MINIMIZE)
 
 # OPTIMIZAR MODELO
 modelo.optimize()
-
-fin_total = time.time()
-print(f"Tiempo total de ejecución: {fin_total - inicio_total}")
 
 if modelo.status == GRB.INFEASIBLE:
     print('The model is infeasible; computing IIS')

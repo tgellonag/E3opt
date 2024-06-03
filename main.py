@@ -1,3 +1,4 @@
+
 from gurobipy import Model, GRB, quicksum
 import pandas as pd
 import numpy as np
@@ -7,7 +8,7 @@ from tkinter import scrolledtext
 
 
 # PARAMETROS
-carpetas_parametros = ["parametros_grande","parametros_mediano", "parametros_chico", "parametros_enano"]
+carpetas_parametros = ["parametros_mediano", "parametros_chico", "parametros_enano",'parametros_dsla_parvulario']
 for i in range(len(carpetas_parametros)):
     print(f"{i+1}. {carpetas_parametros[i]}")
 opcion = input("Ingrese el número de la carpeta de parámetros que desea utilizar: ")
@@ -17,8 +18,9 @@ elif opcion == '2':
     carpeta_parametros = carpetas_parametros[1]
 elif opcion == '3':
     carpeta_parametros = carpetas_parametros[2]
-else:
+elif opcion == '4':
     carpeta_parametros = carpetas_parametros[3]
+
 # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
 z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
 # c_ij: connexiones de pasillos (1 = los pasillos i y j estan conectados | 0 = e.o.c.)
@@ -47,12 +49,11 @@ r = pd.read_csv(f'{carpeta_parametros}/responsable_zona_curso.csv', header=None)
 C = range(len(n)) # numero de cursos
 I = range(len(k))  # numero de pasillos
 Y = range(len(q)) # numero de zonas de seguridad 
-tiempo_max = 1
-for c in C:
-    for i in I:
-        tiempo_max += d[i]/v[c, i]
-print(f"Tiempo máximo: {tiempo_max}")
-T = range(int(tiempo_max)) # tiempo en segundos
+
+periodos_max = cs.funcion(carpeta_parametros, opcion, 5)
+print(f"Tiempo máximo: {periodos_max}")
+T = range(int(periodos_max)) # tiempo en segundos
+
 
 # MODELO
 
@@ -67,6 +68,8 @@ else:
     modelo.setParam("TimeLimit", 60)
 
 # VARIABLES
+
+inicio_total = time.time()
 
 #Anadiendo variable s
 s = {}
@@ -83,6 +86,18 @@ for i in I:
 #Anadiendo Variable Landa
 landa = modelo.addVar(vtype=GRB.CONTINUOUS, name='landa', lb=0)
 modelo.update()
+
+ou = {}
+for c in C:
+    suma = 0  # Reset suma for each new c
+    for t in T:
+
+        for i in I:
+
+            suma += o[i, c] * u[i, c, t]
+
+        ou[c, t] = suma.copy()
+
 
 # RESTRICCIONES
 # 1. λ corresponde al momento en el que el último curso llega a una zona segura.
@@ -103,7 +118,7 @@ print("Restricción 2 lista")
 for c in C:
     for i in I:
         for t in T:
-            modelo.addConstr((quicksum(p[i,c, sigma] for sigma in range(t, min(1 + t + int(d[i]/v[c,i]), len(T)))\
+            modelo.addConstr((quicksum(p[i,c, sigma] for sigma in range(t, min(1 + t + int(d[i]/v[c,i]), periodos_max))\
                 )>= (d[i]/v[c,i]) * u[i,c,t]),name = "R3")
 
 print("Restricción 3 lista")
@@ -111,7 +126,7 @@ print("Restricción 3 lista")
 # 4. Un curso que pasa por un pasillo debe tener uno de origen. A menos que este sea el primero.
 for c in C:
     for i in I:
-        for t in range(1, len(T)):
+        for t in range(1, periodos_max):
             modelo.addConstr(( u[i,c,t] <= o[i,c] + quicksum(x[i,j]*p[j,c,t-1] for j in I if j != i) ), name = "R4")
 
 print("Restricción 4 lista")
@@ -149,12 +164,13 @@ for c in C:
     print(f"Restriccion 8: {c}")
     suma1 = 0
     suma2 = 0
-    
+
     for t in T:
 
         suma1 += quicksum(z[i, y] * u[i, c, t] for y in Y for i in I)
-        suma2 += quicksum(o[j, c] * u[j, c, t] for j in I)
-        
+        suma2 = ou[c, t] 
+
+
         modelo.addConstr(
             suma2 <= quicksum((1 - z[i, y]) * p[i, c, t] for y in Y for i in I) + suma1,
             name=f"R8_{c}_{t}.a"
@@ -193,17 +209,25 @@ print("Restricciones 12 listas")
 # ese pasillo.
 for i in I:
     for c in C:
-        for t in range(1, len(T)):
+        for t in range(1, periodos_max):
             modelo.addConstr(p[i,c,t] <= u[i, c, t] + p[i,c,t-1],name = "R13")
 print("Restricciones 13 listas")
 # 14. sc corresponde al tiempo que el curso c espera en su sala antes de comenzar a 
 # recorrer su pasillo de origen.
+
+start_time = time.time()
+
 for c in C:
-    modelo.addConstr(quicksum(1 - quicksum(o[i, c]* u[i,c,theta] for i in I for theta in range(t + 1)) for t in T) == s[c], name = "R14")
+    modelo.addConstr(quicksum(1 - ou[c, t] for t in T) == s[c], name = "R14")
     # salio_i = [[o[i, c] * u[i,c,t] for t in T] for i in I]
     # salio = [(not sum(1 for i in I if salio_i[i][t]) == 0) for t in T]
     # modelo.addConstr(sum(1 for t in T if not salio[t]) == s[c], name = "R14")
 print("Restricciones 14 listas")
+
+end_time = time.time()
+print(f"Tiempo de ejecución: {end_time - start_time}")
+
+
 # 15. Los cursos no pueden empezar ocupando un pasillo.
 for i in I:
     for c in C:
@@ -211,7 +235,7 @@ for i in I:
         modelo.addConstr(u[i, c, 0] == 0, name = "R15b")
 print("Restricciones 15 listas")
 # 16. λ se encuentra dentro de T.
-modelo.addConstr(landa <= quicksum(d[i]/v[c, i] for c in C for i in I) + 1, name = "R16") 
+modelo.addConstr(landa <= periodos_max, name = "R16") 
 print("Restricciones 16 listas")
 modelo.update()
 print("Restricciones listas")
@@ -220,6 +244,9 @@ modelo.setObjective(landa, GRB.MINIMIZE)
 
 # OPTIMIZAR MODELO
 modelo.optimize()
+
+fin_total = time.time()
+print(f"Tiempo total de ejecución: {fin_total - inicio_total}")
 
 if modelo.status == GRB.INFEASIBLE:
     print('The model is infeasible; computing IIS')
@@ -234,15 +261,15 @@ if modelo.status == GRB.OPTIMAL:
     print(f"Tiempo mínimo de evacuación: {landa.X}")
     for c in C:
         print(f"Tiempo de salida del curso {c}: {s[c].X}")
-    df_resultados = pd.DataFrame(columns=[f"Pasillo {i}" for i in I])
+    df_resultados = pd.DataFrame(columns=[f"P{i}" for i in I])
     for t in T:
         for i in I:
             for c in C:
                 if p[i,c,t].X > 0.5:
                     try:
-                        df_resultados.loc[t, f"Pasillo {i}"] += f", {c}"
+                        df_resultados.loc[t, f"P{i}"] += f", {c}"
                     except:
-                        df_resultados.loc[t, f"Pasillo {i}"] = f"Cursos: {c}"
+                        df_resultados.loc[t, f"P{i}"] = f"C: {c}"
 
     df_resultados = df_resultados.fillna(' ')
     #df_resultados.insert(0, 'Tiempo', [t for T in range(0 , df_resultados.shape[0])])

@@ -18,8 +18,10 @@ elif opcion == '2':
     carpeta_parametros = carpetas_parametros[1]
 elif opcion == '3':
     carpeta_parametros = carpetas_parametros[2]
-else:
+elif opcion == '4':
     carpeta_parametros = carpetas_parametros[3]
+else:
+    carpeta_parametros = 'parametros_dsla_parvulario'
 # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
 z = pd.read_csv(f'{carpeta_parametros}/pasillo_llega_zona_segura.csv', header=None).to_numpy()
 # c_ij: connexiones de pasillos (1 = los pasillos i y j estan conectados | 0 = e.o.c.)

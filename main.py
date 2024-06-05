@@ -3,6 +3,10 @@ import pandas as pd
 import time
 import tkinter as tk
 from tkinter import scrolledtext
+from visualizacion import mostrar_solucion
+from animacion import mostrar_animacion
+import json
+
 
 # definimos el modelo, despues se ejecuta desde la linea 280
 def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = False):
@@ -56,7 +60,7 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
     # Para no tener que esperar tanto tiempo, se puede cambiar el valor de MIPGap a 0.15
     # Esto solo cuando buscamos una cota superior para el tiempo de evacuación
     if not final:
-        modelo.setParam("MIPGap", 0.15)
+        modelo.setParam("MIPGap", 0.12)
 
 
     # VARIABLES
@@ -270,7 +274,33 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
                 ventana.mainloop()
 
             # Llamar a la función para mostrar la tabla
-            mostrar_tabla(df_resultados)
+
+
+            for c in C:
+
+                pasillos_utilizados = {}
+
+                for t in T:
+
+                    for i in I:
+
+                        if u[i,c,t].X > 0.5:
+
+                            pasillos_utilizados[t] = i
+
+
+                # Guardar solución en un archivo JSON\
+
+                with open(f"soluciones/curso{c}.json", "w") as archivo:
+
+                    json.dump(pasillos_utilizados, archivo)
+
+                # mostrar_solucion(c, pasillos_utilizados, s[c].X)
+
+
+                mostrar_animacion(c, pasillos_utilizados, s[c].X)
+
+                            
         else:
             print("No se encontró una solución óptima.")
         print("finish")
@@ -279,6 +309,7 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
             return("infeasible")
         # RESULTADOS (revisenlo ns si esta bien)
         if modelo.status == GRB.OPTIMAL:
+            print(f"Tiempo mínimo de evacuación: {landa.X} | multiplicador: {multiplicador}")
             return int(landa.X) * multiplicador
 
 
@@ -309,13 +340,48 @@ elif opcion == '4':
 # que le tomaría a cada curso pasar por todos los pasillos uno a la vez, lo cual sirve como cota superior al problema
 # ya que se espera que un curso no tenga que pasar por todos los pasillos y que los cursos pueden estar recorriendo 
 # pasillos al mismo tiempo.
-tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 10)
-tiempo_max2 = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 5, tiempo_max=tiempo_max)
-tiempo_max3 = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 2, tiempo_max=tiempo_max2)
+start_time = time.time()
 
-# Con este resultado, podemos definir una mejor cota superior para el tiempo máximo que los cursos se demorarían en evacuar
-# para así utilizar esta cota para el modelo que se busca optimizar (con periodos de 5s).
-optimizar(carpeta_parametros=carpeta_parametros, multiplicador=1, tiempo_max=tiempo_max3, final=True)
 
+multiplicadores = [20, 10, 5, 3, 2]
+tiempos = {}
+for i in multiplicadores:
+    tiempos[i] = 0
+
+
+# tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= multiplicadores[0], final=False)
+
+# print(f'------------------------------\n\n')
+# print(f"| Tiempo máximo: {tiempo_max} |")
+# print(f'\n\n------------------------------')
+# tiempos[multiplicadores[0]] = (tiempo_max, 1/multiplicadores[0] * tiempo_max)
+# multiplicadores.pop(0)
+
+# for i in multiplicadores:
+
+#     if i == multiplicadores[-1]:
+
+#         optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=True)
+#         break
+
+#     tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=False)
+
+#     print(f'------------------------------\n\n')
+#     print(f"| Tiempo máximo: {tiempo_max} |")
+#     print(f'\n\n------------------------------')
+#     tiempos[i] = (tiempo_max, 1/i * tiempo_max)
+#     print(tiempos)
+    
+
+# for i in multiplicadores:
+#     print(f"Multiplicador: {i} Tiempo: {tiempos[i]}")
+
+optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 1, tiempo_max=15, final=True)
+
+
+end_time = time.time()
+print(f'----------------------------------------------------')
+print(f"Tiempo total de ejecución: {end_time - start_time}")
+print(f'----------------------------------------------------')
 # Todo este proceso se realiza con el fin de acortar el tiempo de ejecución del programa, para cumplir con el objetivo de
 # resolver el modelo en menos de 30 min desde que se ejecuta main.py y se selecciona la opcion 'parametros_dsla_parvulario'.

@@ -1,6 +1,6 @@
 from gurobipy import Model, GRB, quicksum
 import pandas as pd
-import time
+
 import tkinter as tk
 from tkinter import scrolledtext
 from visualizacion import mostrar_solucion
@@ -65,8 +65,6 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
 
 
     # VARIABLES
-
-    inicio_total = time.time()
 
     #Anadiendo variable s
     s = {}
@@ -225,9 +223,6 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
     # OPTIMIZAR MODELO
     modelo.optimize()
 
-    fin_total = time.time()
-    print(f"Tiempo total de ejecución cota superior de tiempo: {fin_total - inicio_total}")
-
     if final:
         if modelo.status == GRB.OPTIMAL:
             print(f"Tiempo mínimo de evacuación: {landa.X}")
@@ -351,8 +346,6 @@ elif opcion == '4':
 # que le tomaría a cada curso pasar por todos los pasillos uno a la vez, lo cual sirve como cota superior al problema
 # ya que se espera que un curso no tenga que pasar por todos los pasillos y que los cursos pueden estar recorriendo 
 # pasillos al mismo tiempo.
-start_time = time.time()
-
 
 multiplicadores = [20, 10, 5, 3, 2]
 tiempos = {}
@@ -389,10 +382,5 @@ for i in multiplicadores:
 
 optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 1, tiempo_max=15, final=True)
 
-
-end_time = time.time()
-print(f'----------------------------------------------------')
-print(f"Tiempo total de ejecución: {end_time - start_time}")
-print(f'----------------------------------------------------')
 # Todo este proceso se realiza con el fin de acortar el tiempo de ejecución del programa, para cumplir con el objetivo de
 # resolver el modelo en menos de 30 min desde que se ejecuta main.py y se selecciona la opcion 'parametros_dsla_parvulario'.

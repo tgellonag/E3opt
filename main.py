@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import scrolledtext
 from visualizacion import mostrar_solucion
 from animacion import mostrar_animacion
+from animacion2 import mostrar_animacion_cursos
 import json
 
 
@@ -275,6 +276,8 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
 
             # Llamar a la función para mostrar la tabla
 
+            solucion = {}
+
 
             for c in C:
 
@@ -298,9 +301,17 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
                 # mostrar_solucion(c, pasillos_utilizados, s[c].X)
 
 
-                mostrar_animacion(c, pasillos_utilizados, s[c].X)
+                # mostrar_animacion(c, pasillos_utilizados, s[c].X)
 
-                            
+                solucion[c] = pasillos_utilizados
+
+            with open("soluciones.json", "w") as archivo:
+
+                json.dump(solucion, archivo)
+
+            mostrar_animacion_cursos(solucion)
+
+           
         else:
             print("No se encontró una solución óptima.")
         print("finish")

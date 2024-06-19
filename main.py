@@ -10,7 +10,8 @@ import json
 
 
 # definimos el modelo, despues se ejecuta desde la linea 280
-def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = False):
+def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = False,
+               mult_capacidad_pasillo = 1, mult_vel = 1, mult_tamano_curso = 1):
     # PARAMETROS
     print(f"Modelo con velocidad x{multiplicador} para encontrar cota de tiempo")
     # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
@@ -20,13 +21,13 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
     # d_i: distancia del pasillo i
     d = pd.read_csv(f'{carpeta_parametros}/distancia_pasillos.csv', header=None).iloc[:,0]
     # v_ci: velocidad máxima del curso c por el pasillo i
-    v = pd.read_csv(f'{carpeta_parametros}/velocidad_cursos.csv', header=None).to_numpy()
+    v = pd.read_csv(f'{carpeta_parametros}/velocidad_cursos.csv', header=None).to_numpy() * mult_vel
     # o_ic: pasillo de origen de los cursos (1 = el pasillo i es el pasillo de origen del curso c | 0 = e.o.c.)
     o = pd.read_csv(f'{carpeta_parametros}/pasillo_origen.csv', header=None).to_numpy()
     # k_i: capacidad máxima del pasillo i
-    k = pd.read_csv(f"{carpeta_parametros}/capacidad_pasillos.csv", header=None).iloc[:,0]
+    k = pd.read_csv(f"{carpeta_parametros}/capacidad_pasillos.csv", header=None).iloc[:,0] * mult_capacidad_pasillo
     # n_c: cantidad de personas en el curso c
-    n = pd.read_csv(f"{carpeta_parametros}/cantidad_curso.csv", header=None).iloc[:,0]
+    n = pd.read_csv(f"{carpeta_parametros}/cantidad_curso.csv", header=None).iloc[:,0] * mult_tamano_curso
     # q_y: capacidad máxima de la zona segura y
     q = pd.read_csv(f'{carpeta_parametros}/capacidad_zona.csv', header=None).iloc[:,0]
     # m_c: discapacitados del curso (1 = el curso c tiene algún discapacitado | 0 = e.o.c.)
@@ -273,7 +274,6 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
 
             solucion = {}
 
-
             for c in C:
 
                 pasillos_utilizados = {}
@@ -305,8 +305,7 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
                 json.dump(solucion, archivo)
 
             mostrar_animacion_cursos(solucion)
-
-           
+     
         else:
             print("No se encontró una solución óptima.")
         print("finish")
@@ -347,40 +346,40 @@ elif opcion == '4':
 # ya que se espera que un curso no tenga que pasar por todos los pasillos y que los cursos pueden estar recorriendo 
 # pasillos al mismo tiempo.
 
-multiplicadores = [20, 10, 5, 3, 2]
+multiplicadores = [20, 10, 5, 2, 1]
 tiempos = {}
 for i in multiplicadores:
     tiempos[i] = 0
 
 
-# tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= multiplicadores[0], final=False)
+tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= multiplicadores[0], final=False)
 
-# print(f'------------------------------\n\n')
-# print(f"| Tiempo máximo: {tiempo_max} |")
-# print(f'\n\n------------------------------')
-# tiempos[multiplicadores[0]] = (tiempo_max, 1/multiplicadores[0] * tiempo_max)
-# multiplicadores.pop(0)
+print(f'------------------------------\n\n')
+print(f"| Tiempo máximo: {tiempo_max} |")
+print(f'\n\n------------------------------')
+tiempos[multiplicadores[0]] = (tiempo_max, 1/multiplicadores[0] * tiempo_max)
+multiplicadores.pop(0)
 
-# for i in multiplicadores:
+for i in multiplicadores:
 
-#     if i == multiplicadores[-1]:
+    if i == multiplicadores[-1]:
 
-#         optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=True)
-#         break
+        optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=True, mult_capacidad_pasillo=1.25)
+        break
 
-#     tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=False)
+    tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=False)
 
-#     print(f'------------------------------\n\n')
-#     print(f"| Tiempo máximo: {tiempo_max} |")
-#     print(f'\n\n------------------------------')
-#     tiempos[i] = (tiempo_max, 1/i * tiempo_max)
-#     print(tiempos)
+    print(f'------------------------------\n\n')
+    print(f"| Tiempo máximo: {tiempo_max} |")
+    print(f'\n\n------------------------------')
+    tiempos[i] = (tiempo_max, 1/i * tiempo_max)
+    print(tiempos)
     
 
-# for i in multiplicadores:
-#     print(f"Multiplicador: {i} Tiempo: {tiempos[i]}")
+for i in multiplicadores:
+    print(f"Multiplicador: {i} Tiempo: {tiempos[i]}")
 
-optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 1, tiempo_max=15, final=True)
+# optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 1, tiempo_max=tiempo_max, final=True)
 
 # Todo este proceso se realiza con el fin de acortar el tiempo de ejecución del programa, para cumplir con el objetivo de
 # resolver el modelo en menos de 30 min desde que se ejecuta main.py y se selecciona la opcion 'parametros_dsla_parvulario'.

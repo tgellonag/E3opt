@@ -293,10 +293,7 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
 
                     json.dump(pasillos_utilizados, archivo)
 
-                # mostrar_solucion(c, pasillos_utilizados, s[c].X)
-
-
-                # mostrar_animacion(c, pasillos_utilizados, s[c].X)
+                mostrar_animacion(c, pasillos_utilizados, s[c].X)
 
                 solucion[c] = pasillos_utilizados
 
@@ -364,7 +361,7 @@ for i in multiplicadores:
 
     if i == multiplicadores[-1]:
 
-        optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=True, mult_capacidad_pasillo=1.25)
+        optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=True)
         break
 
     tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=False)

@@ -10,8 +10,11 @@ import json
 
 
 # definimos el modelo, despues se ejecuta desde la linea 280
-def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = False,
-               mult_capacidad_pasillo = 1, mult_vel = 1, mult_tamano_curso = 1):
+def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = False, param = None, variacion = 1):
+    
+    sens = {'z': 1, 'x': 1, 'd': 1, 'v': 1, 'c': 1, 'o': 1, 'k': 1, 'n': 1, 'q': 1, 'm': 1, 'a': 1, 'r': 1}
+
+    sens[param] = variacion
     # PARAMETROS
     print(f"Modelo con velocidad x{multiplicador} para encontrar cota de tiempo")
     # Z_iy: pasillos a zonas seguras (1 = el pasillo i llega a la zona segura y | 0 = e.o.c.)
@@ -19,23 +22,41 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
     # c_ij: connexiones de pasillos (1 = los pasillos i y j estan conectados | 0 = e.o.c.)
     x = pd.read_csv(f'{carpeta_parametros}/conexion_pasillos.csv', header=None).to_numpy()
     # d_i: distancia del pasillo i
-    d = pd.read_csv(f'{carpeta_parametros}/distancia_pasillos.csv', header=None).iloc[:,0]
+    d = pd.read_csv(f'{carpeta_parametros}/distancia_pasillos.csv', header=None).iloc[:,0] * sens['d']
     # v_ci: velocidad máxima del curso c por el pasillo i
-    v = pd.read_csv(f'{carpeta_parametros}/velocidad_cursos.csv', header=None).to_numpy() * mult_vel
+    v = pd.read_csv(f'{carpeta_parametros}/velocidad_cursos.csv', header=None).to_numpy() * sens['v']
     # o_ic: pasillo de origen de los cursos (1 = el pasillo i es el pasillo de origen del curso c | 0 = e.o.c.)
-    o = pd.read_csv(f'{carpeta_parametros}/pasillo_origen.csv', header=None).to_numpy()
+    o = pd.read_csv(f'{carpeta_parametros}/pasillo_origen.csv', header=None).to_numpy() 
     # k_i: capacidad máxima del pasillo i
-    k = pd.read_csv(f"{carpeta_parametros}/capacidad_pasillos.csv", header=None).iloc[:,0] * mult_capacidad_pasillo
+    k = pd.read_csv(f"{carpeta_parametros}/capacidad_pasillos.csv", header=None).iloc[:,0] * sens['k']
     # n_c: cantidad de personas en el curso c
-    n = pd.read_csv(f"{carpeta_parametros}/cantidad_curso.csv", header=None).iloc[:,0] * mult_tamano_curso
+    n = pd.read_csv(f"{carpeta_parametros}/cantidad_curso.csv", header=None).iloc[:,0] * sens['n']
     # q_y: capacidad máxima de la zona segura y
-    q = pd.read_csv(f'{carpeta_parametros}/capacidad_zona.csv', header=None).iloc[:,0]
+    q = pd.read_csv(f'{carpeta_parametros}/capacidad_zona.csv', header=None).iloc[:,0] * sens['q']
     # m_c: discapacitados del curso (1 = el curso c tiene algún discapacitado | 0 = e.o.c.)
-    m = pd.read_csv(f'{carpeta_parametros}/discapacitado_curso.csv', header=None).iloc[:,0]
+    m = pd.read_csv(f'{carpeta_parametros}/discapacitado_curso.csv', header=None).iloc[:,0] 
     # a_i: pasillo apto para discapacitados (1 = el pasillo i es apto para discapacitados | 0 = e.o.c.)
-    a = pd.read_csv(f"{carpeta_parametros}/discapacitado_pasillo.csv", header=None).iloc[:,0]
+    a = pd.read_csv(f"{carpeta_parametros}/discapacitado_pasillo.csv", header=None).iloc[:,0] 
     # r_cy: responsables zonas, (1 = dentro del curso c se encuantra un responzable de la zona y | 0 = e.o.c)
-    r = pd.read_csv(f'{carpeta_parametros}/responsable_zona_curso.csv', header=None).to_numpy()
+    r = pd.read_csv(f'{carpeta_parametros}/responsable_zona_curso.csv', header=None).to_numpy() 
+
+    param_binario = {'z': z, 'x': x, 'o': o, 'm': m, 'a': a, 'r': r}
+
+    if param in param_binario:
+        print('meemm')
+        if variacion == 1:
+            #Hacer que todos sean 1 en el paramentro
+            param_binario[param] = pd.DataFrame(param_binario[param]).applymap(lambda x: 1).to_numpy()
+        else:
+            #Hacer que todos sean 0 en el parametro
+            param_binario[param] = pd.DataFrame(param_binario[param]).applymap(lambda x: 0).to_numpy()
+
+    z = param_binario['z']
+    x = param_binario['x']
+    o = param_binario['o']
+    m = param_binario['m']
+    a = param_binario['a']
+    r = param_binario['r']
 
     # CONJUNTOS
 
@@ -293,7 +314,8 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
 
                     json.dump(pasillos_utilizados, archivo)
 
-                mostrar_animacion(c, pasillos_utilizados, s[c].X)
+                mostrar_solucion(c, pasillos_utilizados, s[c].X, param, variacion, landa=landa.X)
+                mostrar_animacion(c, pasillos_utilizados, s[c].X, param, variacion, landa=landa.X)
 
                 solucion[c] = pasillos_utilizados
 
@@ -348,8 +370,49 @@ tiempos = {}
 for i in multiplicadores:
     tiempos[i] = 0
 
+print('------------------------------')
+print('Las opciones de parametros son:')
+print('z: pasillos a zonas seguras')
+print('d: distancia del pasillo')
+print('v: velocidad máxima del curso')
+print('k: capacidad máxima del pasillo')
+print('n: cantidad de personas en el curso')
+print('q: capacidad máxima de la zona segura')
+print('m: discapacitados del curso')
+print('a: pasillo apto para discapacitados')
+print('r: responsables zonas')
+print('Normal: No se varia ningun parametro')
+print('------------------------------\n\n')
 
-tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= multiplicadores[0], final=False)
+param = input('Ingrese el parametro que desea variar: ')
+
+if param not in ['z', 'd', 'v', 'k', 'n', 'q', 'm', 'a', 'r', 'Normal']:
+    print('El parametro ingresado no es correcto')
+    exit()
+
+print('------------------------------\n\n')
+print('Las opciones de variacion son:\n\n')
+
+if param in ['z', 'm', 'a', 'r']:
+
+    print('Parametros binarios:')
+    print('1: Hacer que todos sean 1 en el parametro')
+    print('0: Hacer que todos sean 0 en el parametro')
+
+else:
+
+    print('Multiplicar el parametro por un valor')
+
+print('------------------------------\n\n')
+
+if param == 'Normal':
+    variacion = 1
+else:
+    variacion = float(input('Ingrese la variacion que desea para el parametro: '))
+
+
+tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= multiplicadores[0],
+                        param=param, variacion=variacion, final=False)
 
 print(f'------------------------------\n\n')
 print(f"| Tiempo máximo: {tiempo_max} |")
@@ -361,10 +424,12 @@ for i in multiplicadores:
 
     if i == multiplicadores[-1]:
 
-        optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=True)
+        optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i,
+                   tiempo_max=tiempo_max, param=param, variacion=variacion, final=True)
         break
 
-    tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max, final=False)
+    tiempo_max = optimizar(carpeta_parametros=carpeta_parametros, multiplicador= i, tiempo_max=tiempo_max,
+                            param=param, variacion=variacion, final=False)
 
     print(f'------------------------------\n\n')
     print(f"| Tiempo máximo: {tiempo_max} |")

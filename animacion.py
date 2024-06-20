@@ -2,8 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import json
+import os
 
-def mostrar_animacion(c, pasillos_utilizados, t_salida):
+def mostrar_animacion(c, pasillos_utilizados, t_salida, param = '', variacion = '', landa = None):
 
     print(pasillos_utilizados)
 
@@ -15,11 +16,20 @@ def mostrar_animacion(c, pasillos_utilizados, t_salida):
     
     print(intervalos)
 
+    labels = []
+
+
     pasillos = {}
     for i in range(len(coordenadas_pasillos)):
         pasillos[i] = [(coordenadas_pasillos[0][i], coordenadas_pasillos[1][i]), (coordenadas_pasillos[2][i], coordenadas_pasillos[3][i])]
 
     def update(t):
+
+        labels.append(plt.text(40, -5, f'Tiempo: {t}', fontsize=12))
+
+        if len(labels) > 1:
+            l = labels.pop(0)
+            l.remove()
 
         if t == 0:
 
@@ -45,12 +55,13 @@ def mostrar_animacion(c, pasillos_utilizados, t_salida):
             plt.plot([pasillos[origen][0][0]], [pasillos[origen][0][1]], 'go')
 
 
-
     fig = plt.figure(figsize=(10, 8))
     ani = FuncAnimation(fig, update, frames=range(15), interval=1000)
+
+    os.makedirs(f'animaciones_{param}_{variacion}', exist_ok=True)
     
     #Guardar la animacion en gif
-    ani.save(f'animaciones/curso{c}.gif', writer='pillow', fps=1)
+    ani.save(f'animaciones_{param}_{variacion}/curso{c}.gif', writer='pillow', fps=1)
 
 if __name__ == '__main__':
 
@@ -68,13 +79,12 @@ if __name__ == '__main__':
 
         pasillos_utilizados = {}
 
-        for i in solucion:
+        for c in solucion:
 
-            pasillos_utilizados[int(i)] = int(solucion[i])
+            pasillos_utilizados[int(c)] = int(solucion[c])
 
         soluciones[i] = pasillos_utilizados
 
-    print(soluciones)
 
     for i in soluciones:
 

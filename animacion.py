@@ -6,18 +6,13 @@ import os
 
 def mostrar_animacion(c, pasillos_utilizados, t_salida, param = '', variacion = '', landa = None):
 
-    print(pasillos_utilizados)
-
     coordenadas_pasillos = pd.read_csv('parametros_dsla_parvulario/coordenadas_pasillos.csv', header=None)
 
     intervalos = []
     for t in pasillos_utilizados:
         intervalos.append(t)
     
-    print(intervalos)
-
     labels = []
-
 
     pasillos = {}
     for i in range(len(coordenadas_pasillos)):
@@ -49,10 +44,13 @@ def mostrar_animacion(c, pasillos_utilizados, t_salida, param = '', variacion = 
         if t in intervalos:
         
             index = pasillos_utilizados[t]
-            plt.plot([pasillos[index][0][0], pasillos[index][1][0]], [pasillos[index][0][1], pasillos[index][1][1]], 'r-')
-        
-            origen = pasillos_utilizados[intervalos[0]]
-            plt.plot([pasillos[origen][0][0]], [pasillos[origen][0][1]], 'go')
+
+            if index >= 0:
+
+                plt.plot([pasillos[index][0][0], pasillos[index][1][0]], [pasillos[index][0][1], pasillos[index][1][1]], 'r-')
+            
+                origen = pasillos_utilizados[intervalos[0]]
+                plt.plot([pasillos[origen][0][0]], [pasillos[origen][0][1]], 'go')
 
 
     fig = plt.figure(figsize=(10, 8))

@@ -39,7 +39,9 @@ def mostrar_solucion(c, pasillos_utilizados, t_salida, param = '', variacion = '
 
         k = pasillos_utilizados[i]
 
-        plt.plot([pasillos[k][0][0], pasillos[k][1][0]], [pasillos[k][0][1], pasillos[k][1][1]], 'r-')
+        if k >= 0:
+
+            plt.plot([pasillos[k][0][0], pasillos[k][1][0]], [pasillos[k][0][1], pasillos[k][1][1]], 'r-')
 
     origen = pasillos_utilizados[intervalos[0]]
 

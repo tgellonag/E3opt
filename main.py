@@ -307,6 +307,15 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
 
                             pasillos_utilizados[t] = i
 
+                        for y in Y:
+
+                            if u[i, c, t].X * z[i, y] == 1:
+
+                                tiempo = s[c].X + sum(sum(p[i,c,t].X for i in I) for t in T)
+                                print(f'Tiempo de llegada a la zona segura {y} del curso {c}: {tiempo}')
+                                pasillos_utilizados[tiempo] = -y-1
+
+                print(f'Curso {c}: {pasillos_utilizados}')
 
                 # Guardar solución en un archivo JSON\
 
@@ -322,6 +331,8 @@ def optimizar(carpeta_parametros, multiplicador, tiempo_max = None, final = Fals
             with open("soluciones.json", "w") as archivo:
 
                 json.dump(solucion, archivo)
+
+            print("Soluciones guardadas en archivos JSON y animaciones creadas")
 
             mostrar_animacion_cursos(solucion)
      
@@ -441,7 +452,7 @@ for i in multiplicadores:
 for i in multiplicadores:
     print(f"Multiplicador: {i} Tiempo: {tiempos[i]}")
 
-# optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 1, tiempo_max=tiempo_max, final=True)
+# optimizar(carpeta_parametros=carpeta_parametros, multiplicador= 1, tiempo_max=15, final=True)
 
 # Todo este proceso se realiza con el fin de acortar el tiempo de ejecución del programa, para cumplir con el objetivo de
 # resolver el modelo en menos de 30 min desde que se ejecuta main.py y se selecciona la opcion 'parametros_dsla_parvulario'.

@@ -32,21 +32,33 @@ def prepare_intervals(cursos):
     """Prepare the intervals for each course."""
     return {c: list(cursos[c].keys()) for c in cursos}
 
-def plot_static_elements(ax, pasillos):
+def plot_static_elements(ax, pasillos, cursos):
     """Plot static elements of the plot."""
     ax.clear()
+
     for i in pasillos:
+
         ax.plot([pasillos[i][0][0], pasillos[i][1][0]], [pasillos[i][0][1], pasillos[i][1][1]], 'k-')
+
     ax.fill([0, 0, -5, -5], [0, 20, 20, 0], 'gray') # zs 3
     ax.fill([4, 14, 14, 4], [0, 0, -5, -5], 'gray') # zs 2
     ax.fill([34, 30, 30, 45, 45], [14, 19, 24, 24, 14], 'gray') #zs 1
+
+    # Escribir el origen de todos los cursos
+    
+    for c in cursos:
+            
+        ax.plot([pasillos[cursos[c][list(cursos[c].keys())[0]]][0][0]], [pasillos[cursos[c][list(cursos[c].keys())[0]]][0][1]], 'go')
+
+    
+
 
 def update_plot(t, ax, intervalos, cursos, pasillos, colors_markers, pos_zs = None):
 
     pos_zs_copy = deepcopy(pos_zs)
     """Update the plot for the given time step."""
 
-    plot_static_elements(ax, pasillos)
+    plot_static_elements(ax, pasillos, cursos)
 
     for c in cursos:
 
@@ -106,9 +118,9 @@ def mostrar_animacion_cursos(cursos):
     pasillos = load_pasillos('parametros_dsla_parvulario/coordenadas_pasillos.csv')
     intervalos = prepare_intervals(cursos)
     colors_markers = ['b^', 'g^', 'r^', 'c^', 'm^', 'bo', 'go', 'ro', 'co', 'mo', 'bd', 'gd', 'rd']
-    pos_zs = {-1 : [(35, 15), (35, 16), (35, 17), (35, 18), (35, 19), (35, 20), (35, 21), (35, 22), (35, 23), (35, 24), (35, 15), (35, 16), (35, 17), (35, 18), (35, 19), (35, 20), (35, 21), (35, 22), (35, 23), (35, 24)],
+    pos_zs = {-1 : [(35, 15), (35, 17), (35, 19), (35, 21), (35, 23), (35, 24), (35, 15), (35, 16), (35, 17), (35, 18), (35, 19), (35, 20), (35, 21), (35, 22), (35, 23), (35, 24)],
               -2: [(-2, 18), (-2, 16), (-2, 14), (-2, 12), (-2, 10), (-2, 8), (-2, 6), (-2, 4), (-2, 2), (-2, 0), (-2, 18), (-2, 16), (-2, 14), (-2, 12), (-2, 10), (-2, 8), (-2, 6), (-2, 4), (-2, 2), (-2, 0)],
-              -3: [(6, -1), (8, -1), (10, -1), (12, -1), (6, -3), (8, -3), (10, -3), (12, -3), (6, -5), (8, -5), (10, -5), (12, -5), (6, -1), (8, -1), (10, -1), (12, -1), (6, -3), (8, -3), (10, -3), (12, -3), (6, -5), (8, -5), (10, -5), (12, -5)],}
+              -3: [(6, -1), (12, -1), (6, -3), (12, -3), (12, -3), (6, -5), (8, -5), (10, -5), (12, -5), (6, -1), (8, -1), (10, -1), (12, -1), (6, -3), (8, -3), (10, -3), (12, -3), (6, -5), (8, -5), (10, -5), (12, -5)],}
 
     pos_zs_copy = {}
     
